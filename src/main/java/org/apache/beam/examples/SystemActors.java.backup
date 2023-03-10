@@ -1,0 +1,84 @@
+package org.apache.beam.examples;
+
+import akka.actor.typed.*;
+import akka.actor.typed.ActorRef;
+import akka.actor.typed.javadsl.*;
+import akka.actor.AbstractActor;
+import akka.actor.ActorSystem;
+import akka.actor.Props;
+
+// # concepts
+// - ## OLD API
+
+// - ActorContext.self
+// - PromiseActorRef
+// - newCommandHandlerBuilder
+// - newEventHandlerBuilder
+// - Event()
+
+//  - AbstractActor
+//   - getSelf()
+//   - getSender()
+//   - getContext()
+//    - actorOf()
+//   - createReceive()
+//   - unhandledMessage()
+//   - supervisorStrategy()
+
+// - ## NEW API
+
+// - AbstractBehavior
+//  - newReceiveBuilder()
+//  - getContext().getSelf()
+//  - getContext().getLog()
+//  - getClass()
+//  - getSender()
+//  - getSelf()
+//  - Behaviors#setup()
+// - ActorRef<T>
+// - Behavior<T>
+//  - Behavior#create()
+// - ActorContext<T>
+//  - ActorContext#spawn(..., ...)
+// - Receive
+
+// # designs
+// - actor of actors
+
+
+class SystemActors {
+
+  public static class Actor_1 extends AbstractActor {
+
+    public static class Attack {
+
+      public final Integer value;
+
+      public Attack(Integer value){
+        this.value = value;
+      }
+
+    } 
+
+    public Receive createReceive() {
+      return receiveBuilder()
+      .onMessage(Attack.class, this::onAttack)
+      .build();
+    }
+
+    private Behavior<Attack> onAttack(Attack attack){
+
+    }
+  }
+
+  public static void start(){
+
+    ActorSystem system = ActorSystem.create("akka-app-system");
+
+    ActorRef readingActorRef = system.actorOf(Props.create(Actor_1.class), "actor-1");
+
+    readingActorRef.tell(new Actor_1.Attack(100), readingActorRef);
+
+  }
+
+}

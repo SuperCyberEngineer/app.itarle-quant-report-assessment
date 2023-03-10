@@ -1,0 +1,66 @@
+version: "3.9"
+services:
+  storage.data.test.itarle:
+    image: postgres:latest
+    container_name: storage.data.test.itarle
+    hostname: postgres
+    environment:
+      - POSTGRES_USER=oem
+      - POSTGRES_PASSWORD=oem
+      - POSTGRES_DB=oem
+      - CLEANED_DATA_FILE  
+    # volumes:
+    #   - ./config/postgresql.conf:/var/lib/postgresql/data/postgresql.conf
+      # - ./:/home/app
+    # working_dir: /home/app
+    # command: 
+    #   [
+    #     "/bin/sh",
+    #     "-c",
+    #     "./scripts/data-storage/main.sh" #
+    #   ]
+    ports:
+      - "5432:5432"
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "8"
+          memory: 10G
+      restart_policy:
+        condition: on-failure
+    depends_on:
+      - data-cleaning-service
+    # restart: always
+   
+  data-cleaning-service:
+    image: google/cloud-sdk:latest
+    container_name: data-cleaning-service
+    network_mode: "host"
+    volumes:
+      - ./:/home/app
+    working_dir: /home/app
+    command:
+      [
+        "/bin/bash",
+        "-c",
+        "time cd ./scripts/data-cleaning/ && ./install.sh && cd ../.. && python3 ./scripts/data-cleaning/main.py"
+      ]
+  data-importing-service: 
+    container_name: data-importing-service
+    image: governmentpaas/psql
+    network_mode: "host"
+    volumes:
+      - ./:/home/app
+    environment:
+      - CLEANED_DATA_FILE  
+    working_dir: /home/app
+    command: 
+      [
+        "/bin/sh",
+        "-c",
+        "./scripts/data-importing/main.sh"
+      ]
+    depends_on:
+      - storage.data.test.itarle
+      - data-cleaning-service

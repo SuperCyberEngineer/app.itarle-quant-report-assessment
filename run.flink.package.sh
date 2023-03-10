@@ -1,0 +1,1 @@
+mvn package -Pflink-runner

@@ -1,0 +1,62 @@
+services:
+  testJdbcIO:
+    image: ghcr.io/graalvm/graalvm-ce:ol7-java11-22
+    volumes:
+      - ./:/app
+      - ./target
+      - ./surefire-reports/.testJdbcIO:/app/target/surefire-reports
+    command:
+      [
+        "/bin/sh",
+        "-c",
+        "time mvn -T160 --offline -am -Dmaven.javadoc.skip=true -Dtest=AppTest#testJdbcIO surefire:test -X -e >> /app/target/surefire-reports/log 2>&1"
+      ]
+
+  # Test_testReportResultSchemaToJsonPTransform:
+  #   image: mvn-jdk
+  #   build: .
+  #   volumes:
+  #     - ./:/app
+  #     - ./target
+  #   command:
+  #     [
+  #       "/bin/sh",
+  #       "-c",
+  #       "mvn -Dtest=AppTest#testReportResultSchemaToJsonPTransform test"
+  #     ]
+  # Test_testTicksChangedEvents:
+  #   image: mvn-jdk
+  #   build: .
+  #   volumes:
+  #     - ./:/app
+  #     - ./target
+  #   command:
+  #     [
+  #       "/bin/sh",
+  #       "-c",
+  #       "mvn -Dtest=AppTest#testTicksChangedEvents test"
+  #     ]
+  # Test_testFilterValidNonAuctionTradingData:
+  #   image: mvn-jdk
+  #   build: .
+  #   volumes:
+  #     - ./:/app
+  #     - ./target
+  #   command:
+  #     [
+  #       "/bin/sh",
+  #       "-c",
+  #       "mvn -Dtest=AppTest#testFilterValidNonAuctionTradingData test"
+  #     ]
+  # Test_testGroupAndsort:
+  #   image: mvn-jdk
+  #   build: .
+  #   volumes:
+  #     - ./:/app
+  #     - ./target
+  #   command:
+  #     [
+  #       "/bin/sh",
+  #       "-c",
+  #       "mvn -Dtest=AppTest#testGroupAndsort test"
+  #     ]

@@ -1,0 +1,38 @@
+version: "3.5"
+services:
+  # pgadmin:
+  #   container_name: pgcli 
+  #   image: dencold/pgcli
+    # links:
+    #   - "postgres:postgres"
+  postgres:
+    container_name: postgres
+    image: postgres:latest
+    hostname: postgres
+    # network_mode: "host"
+    # networks: 
+    #   - postgres
+    environment:
+      - POSTGRES_USER=oem
+      - POSTGRES_PASSWORD=oem
+      - POSTGRES_DB=oem
+    volumes:
+      - ./.pgsql-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    # restart: always
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "4"
+          memory: 5G
+      restart_policy:
+        condition: on-failure
+      
+
+# networks:
+#   postgres:
+#     name: postgres
+#     # driver: bridge
+#     driver: weaveworks/net-plugin:latest_release

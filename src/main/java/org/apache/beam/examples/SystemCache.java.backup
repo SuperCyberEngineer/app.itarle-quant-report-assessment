@@ -1,0 +1,203 @@
+package org.apache.beam.examples;
+
+import static org.junit.Assert.*;
+// import org.ehcache.config.units.MemoryUnit;
+import org.ehcache.Cache;
+// import org.slf4j.Logger;
+// import orgCacheManager.slf4j.LoggerFactory;
+
+import org.ehcache.CacheManager;
+import org.ehcache.config.builders.CacheManagerBuilder;
+import org.ehcache.config.builders.CacheConfigurationBuilder;
+import org.ehcache.config.builders.ResourcePoolsBuilder;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.apache.commons.collections.IteratorUtils;
+
+public class SystemCache {
+
+  private CacheManager cacheManager;
+
+  private HashMap<String, Set> cacheMap; 
+  
+  // # types of cache
+  // - events (event cache[event-time]: event)
+  // - events by stock (stock-event cache[event-time]: event # by stockcode)
+  // - sorted events by stock (sorted-stock-event cache[stockcode]: events)
+  // - cleaned events by stock (cleaned-sorted-stock-event cache[stockcode]: events)
+  // - traded times by stock (traded-times cache[stockcode]: times)
+  // - traded prices by stock (traded-prices cache[stockcode]: prices)
+
+  // - traded volumes by stock (traded-prices cache[stockcode]: volumes)
+  // - tick change times by stock (tick change times cache[stockcode]: times)
+  // - bidaskspreads by stock (bid-ask-spreads cache[stockcode]: values)
+  // - roundedTradedPriceLastDigitBe0Prob (no cache)
+  // - roundedTradedVolumeLastDigitBe0Prob (no cache)
+  // - quant report (# by stockcode)
+
+  // # cache phrase
+  // ## higher layer cache
+  // - addCacheCollection(collectionName, collectionObj) 
+  // - addCacheCollectionElement(collectionName, elementObj)
+  // - getCacheCollectionElement(collectionName, elementObj)
+  // - getCacheCollection(collectionName)
+
+  // - create cache table
+  // - delete cache table
+  // - get all cache key / key values
+  // - check if cache table exists
+
+    public void init() {
+      cacheMap = new HashMap<String, Set>();
+
+      cacheManager = CacheManagerBuilder.newCacheManagerBuilder().build();
+
+      cacheManager.init();
+    }
+
+    public <K, V> Cache<K, V> createCache(String cacheName, Class<K> keyClass, Class<V> valueClass, int size){
+
+        return cacheManager
+          .createCache(
+            cacheName, 
+            CacheConfigurationBuilder
+            .newCacheConfigurationBuilder(
+              keyClass,
+              valueClass,
+              ResourcePoolsBuilder.heap(size)
+            )
+          );
+
+    }
+
+    // @deprecated
+    private Set getCacheAllKeys(String cacheName) {
+
+      if (cacheMap.get(cacheName) == null) return null;
+      
+      return cacheMap.get(cacheName);
+
+    }
+
+    private <K> void saveCacheKey(String cacheName, K cacheKey){
+
+      if (cacheMap.get(cacheName) == null) cacheMap.put(cacheName, new Set(){{ add(cacheKey); }});
+
+      cacheMap.get(cacheName).add(cacheKey);
+
+    }
+
+    public <K,V> boolean saveCache(String cacheName, K cacheKey, V cacheValue) {
+
+      saveCacheKey(cacheName, cacheKey);
+
+      Cache cache = this.getCache(cacheName);
+
+      if (cache == null){
+         cache = this.createCache(cacheName, K.class, V.class, 1000);
+      }
+
+      cache.put(cacheKey, cacheValue);
+
+      return true;
+    }
+
+    // public <K,V> V getCacheValue(String cacheName, K cacheKey, Class<V> valueClass) {
+    public <K, V> V getCacheValue(String cacheName, K cacheKey) {
+
+      Cache<K, V> c = (Cache<K, V>) this.getCache(cacheName);
+      // Cache<K,V> c = this.getCache(cacheName, cacheKey.class, valueClass);
+
+      if (c == null) return null;
+
+      return c.get(cacheKey);
+    }
+
+    public Collection<String> getCacheNames(){
+      // return cacheManager.getCacheNames();
+      return null;
+    }
+
+    public <K,V> List<V> getCacheAllValues(String cacheName, Class<K> cacheKeyClass, Class<V> cacheValueClass) {
+
+      // Set keySet = getCacheAllKeys(cacheName);
+
+      Cache c = (Cache<K, V>) this.getCache(cacheName, cacheKeyClass, cacheValueClass);
+      // Cache<K,V> c = this.getCache(cacheName, cacheKey.class, valueClass);
+
+      if (c == null) return null;
+
+      Iterator<Cache.Entry<K,V>> its = c.iterator();
+
+      return StreamSupport.stream(its.spliterator(), true)
+      .parallel()
+      .map(e -> (V) e.getObjectValue())
+      .collect(Collectors.toList());
+
+    }
+
+    public <K,V> Cache<K, V> getCache(String cacheName, Class<K> keyClass, Class<V> valueClass){
+    // public Cache getCache(String cacheName){
+
+      // cacheManager
+      Cache<K, V> cache = cacheManager.getCache(cacheName, keyClass, valueClass);
+      // Cache cache = cacheManager.getCache(cacheName);
+
+      return cache;
+    }
+
+    // save memory
+    // public <K,V> void deleteCache(String cacheName, Class<K> cacheKeyClass, Class<V> cacheValueClass){
+    public void deleteCache(String cacheName){
+
+      // Cache<K,V> c = this.getCache(cacheName, cacheKeyClass, cacheValueClass);
+      Cache c = this.getCache(cacheName);
+
+      assertTrue(c != null);
+
+      if (c == null) return;
+
+      c.clear();
+    }
+
+    // public <V> CollectionCache<V> createCollectionCache(String cacheName, Class<V> valueClass, int size){
+    //   return new CollectionCache(cacheName, valueClass, size);
+    // }
+
+    // public class CollectionCache<V> {
+    //   private Cache<String, V> cache; 
+    //   private String cacheName;
+
+    //   public CollectionCache(
+    //     String cacheName,
+    //     Class<V> valueClass,
+    //     int size
+    //   ){
+    //     this.cacheName = cacheName;
+    //     this.cache = cacheManager.createCache(
+    //       cacheName, 
+    //       CacheConfigurationBuilder
+    //       .newCacheConfigurationBuilder(
+    //           String.class,
+    //           valueClass,
+    //           ResourcePoolsBuilder.heap(size)));
+    //   }
+
+    //   // public V get(){
+    //   public void get(){
+    //     // return this.cache.get(this.cacheName);
+    //   }
+
+    //   public void set(V input){
+    //     // this.cache.set(this.cacheName, input);
+    //   }
+
+    // }
+
+// requirements: 
+// # get all time keys
+// # get all stock keys
+}

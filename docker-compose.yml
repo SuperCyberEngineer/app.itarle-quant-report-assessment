@@ -1,0 +1,81 @@
+version: "3.9"
+
+services:
+
+  data-processing-service.itarle:
+    image: mvn-jdk
+    container_name: data-processing-service.itarle
+    network_mode: "host"
+    working_dir: /home/app
+    user: "${UID}:${GID}"
+    volumes:
+      - ./:/home/app
+      - .cache.mvn:/root/.m2
+    command:
+      [
+        "/bin/bash",
+        "-c",
+        "./compile.sh && ./run.flink.local.sh"
+      ]
+
+  data-storage-service.itarle:
+    image: postgres:latest
+    container_name: data-storage-service.itarle
+    hostname: postgres
+    environment:
+      - POSTGRES_USER=oem
+      - POSTGRES_PASSWORD=oem
+      - POSTGRES_DB=oem
+      - PGDATA=/var/lib/postgresql/data/pg_files
+    network_mode: "host"
+    volumes:
+      - ./config/postgresql.conf:/etc/postgresql.conf
+      - .cache.postgres:/var/lib/postgresql/data/pg_files
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "8"
+          memory: 8G
+      restart_policy:
+        condition: on-failure
+    command: ["postgres", "-c", "config_file=/etc/postgresql.conf"]
+  data-cleaning-service.itarle:
+    image: google/cloud-sdk:latest
+    container_name: data-cleaning-service.itarle
+    network_mode: "host"
+    volumes:
+      - ./:/home/app
+    working_dir: /home/app
+    command:
+      [
+        "/bin/bash",
+        "-c",
+        "time cd ./scripts/data-cleaning/ && ./install.sh && cd ../.. && python3 ./scripts/data-cleaning/main.py && rm ./inputs/scandi.csv"
+      ]
+  data-importing-service.itarle: 
+    container_name: data-importing-service.itarle
+    image: postgres:latest
+    network_mode: "host"
+    volumes:
+      - ./:/home/app
+    environment:
+      - CLEANED_DATA_FILE  
+    working_dir: /home/app
+    command: 
+      [
+        "/bin/sh",
+        "-c",
+        "./scripts/data-importing/main.sh && rm -r ./inputs/**"
+      ]
+    depends_on:
+      - data-storage-service.itarle
+      - data-cleaning-service.itarle
+
+  app-monitoring-service.itarle:
+    image: amir20/dozzle
+    container_name: app-monitoring-service.itarle
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "9000:8080"
