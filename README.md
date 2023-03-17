@@ -22,7 +22,7 @@ QUANT REPORT APP
 - docker 2010.12
   - mvnd
   - Java 11
-  - psql 12.13
+  - postgresql 12.13
   - Python 3.7
   - Maven 3.8.6 running on Java 11
   - Git 2.25.1
