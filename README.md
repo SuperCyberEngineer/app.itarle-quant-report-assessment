@@ -45,6 +45,27 @@ QUANT REPORT APP
 
 ```
 
+### trading event table schema
+```sql
+CREATE TABLE IF NOT EXISTS T_events (
+  stock_code VARCHAR(100) NOT NULL, -- 1
+  col_2 VARCHAR(100) NOT NULL,
+  bid_price VARCHAR(100) NOT NULL, -- 3
+  ask_price VARCHAR(100) NOT NULL, -- 4
+  trade_price VARCHAR(100) NOT NULL, -- 5
+  bid_volume VARCHAR(100) NOT NULL, -- 6
+  ask_volume VARCHAR(100) NOT NULL, -- 7
+  trade_volume VARCHAR(100) NOT NULL, -- 8
+  update_type VARCHAR(100) NOT NULL, -- 9
+  col_10 VARCHAR(100) NOT NULL,
+  date VARCHAR(100) NOT NULL, -- 11
+  time VARCHAR(100) NOT NULL, -- 12
+  col_13 VARCHAR(100) NOT NULL,
+  col_14 VARCHAR(100) NOT NULL,
+  condition VARCHAR(100) NOT NULL -- 15
+);
+```
+
 ### syntax remarks
 
 - []: undone
